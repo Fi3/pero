@@ -1,28 +1,36 @@
 module Utils
-    ( newKeyPair
-    ) where
+( makePrvKey
+, signMessage
+,verifySig
+) where
 
--- import Crypto.PubKey.ECC.ECDSA (KeyPair (KeyPair), toPrivateKey, sign, Signature)
--- import Crypto.PubKey.ECC.Types (Curve (CurveF2m), Point (Point), CurveCommon (CurveCommon), CurveBinary (CurveBinary)) --, PublicPoint, PrivateNumber, CurveBinary, CurveCommon)
--- import Data.ByteArray (convert, Bytes)
--- import Data.ByteString.Char8 (pack)
--- import Crypto.Hash (SHA256 (SHA256))
--- import Crypto.Random.Types (MonadRandom)
-import Network.Haskoin.Crypto as CR
--- 
--- point = Point 1 2
--- curveCom = CurveCommon 6720 9823 point 2323 3448
--- curveBin = CurveBinary 9872 curveCom
--- curve = CurveF2m curveBin
--- publicPoint = Point 8 3
--- privateNumber = 93843
--- keyPair = KeyPair curve publicPoint privateNumber
--- privateKey = toPrivateKey keyPair
--- message = pack "ciao ciao ciao"
--- messageConverted :: Bytes
--- messageConverted = convert message
--- signedM :: (MonadRandom m) => m Signature
--- signedM = sign privateKey SHA256 message
--- 
--- 
-newKeyPair = CR.getEntropy 45
+import qualified Network.Haskoin.Crypto as CR
+import Data.ByteString (ByteString)
+import Data.ByteString.Char8 (pack)
+import Data.Maybe (fromMaybe)
+
+makePrvKey :: [Char] -> Maybe CR.PrvKey
+makePrvKey wif =
+  CR.fromWif (pack wif)
+
+-- | Signa a message and check that the signature is valid
+--
+-- Examples:
+--
+-- >>> let message = "CIAOCIAO"
+-- >>> let prvK = makePrvKey "5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj"
+-- >>> let signedMessage = signMessage message prvK
+-- >>> verifySig message signedMessage (CR.derivePubKey <$> prvK)
+-- Just True
+--
+signMessage :: [Char] -> Maybe CR.PrvKey -> Maybe CR.Signature
+signMessage msg prvK =
+  let hash = CR.hash256 (pack msg)
+        in fmap (CR.signMsg hash) prvK
+
+verifySig :: [Char] ->  Maybe CR.Signature -> Maybe CR.PubKey -> Maybe Bool
+verifySig _ Nothing _ = Nothing
+verifySig _ _ Nothing = Nothing
+verifySig msg sig pubK =
+  let hash = CR.hash256 (pack msg)
+  in (CR.verifySig hash) <$> sig <*> pubK

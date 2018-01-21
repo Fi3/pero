@@ -21,10 +21,10 @@ description:         Please see the README on Github at <https://github.com/gith
 
 dependencies:
 - haskoin-core == 0.4.2
-- base >= 4.8 && < 5
-  #- cryptonite == 0.24
-  #- memory == 0.14.11
-  #- bytestring == 0.10.8.2
+- base == 4.10.1.0
+- mtl == 2.2.1
+- bytestring == 0.10.8.2
+- doctest == 0.13.0
 
 library:
   source-dirs: src
